@@ -46,6 +46,10 @@ export default defineConfig({
             '^weatherforecast': {
                 target,
                 secure: false
+            },
+            '^employee': {
+                target,
+                secure: false
             }
         },
         port: 5173,
@@ -54,5 +58,5 @@ export default defineConfig({
             cert: fs.readFileSync(certFilePath),
         }
     },
-    base: '/LogTimeWeb/'
+    base: '/ReactWithASP'
 })

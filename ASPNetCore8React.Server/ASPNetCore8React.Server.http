@@ -1,4 +1,4 @@
-@ASPNetCore8React.Server_HostAddress = http://localhost:5109/LogTimeWeb
+@ASPNetCore8React.Server_HostAddress = http://localhost:5109/ReactWithASP
 
 GET {{ASPNetCore8React.Server_HostAddress}}/weatherforecast/
 Accept: application/json

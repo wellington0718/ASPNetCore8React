@@ -1,55 +1,73 @@
 ﻿import { useEffect, useState } from 'react';
 import './App.css';
 
-interface Forecast {
-    date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
+interface Employee {
+    userId: string;
+    userName: string;
+    userLastName: string;
+    projectName: string;
+    projectId: string;
 }
 
 function App() {
-    const [forecasts, setForecasts] = useState<Forecast[]>();
+    const [employee, setEmployee] = useState<Employee>();
+    const [count, setCount] = useState<number>(0);
+    const [id, setId] = useState<string>("");
 
     useEffect(() => {
-        populateWeatherData();
+        searchEmployee();
     }, []);
 
-    const contents = forecasts === undefined
+    const contents = employee === undefined
         ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table-striped table" aria-labelledby="tableLabel">
-            <thead>
+        : <table className="table-rounded table-stripped table" aria-labelledby="tableLabel">
+            <thead className="table-dark">
                 <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
+                    <th>Id</th>
+                    <th>First name</th>
+                    <th>Last name</th>
+                    <th>Project</th>
+                    <th>Project id</th>
                 </tr>
             </thead>
             <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
+                <tr key={employee.userId}>
+                    <td>{employee.userId}</td>
+                    <td>{employee.userName}</td>
+                    <td>{employee.userLastName}</td>
+                    <td>{employee.projectName}</td>
+                    <td>{employee.projectId}</td>
+                </tr>
             </tbody>
         </table>;
 
     return (
         <div>
-            <h1 id="tableLabel">Weather forecast</h1>
+            <button onClick={() => setCount(count + 1)}>Count: {count}</button>
+            <h1 id="tableLabel">Employee Details</h1>
             <p>This component demonstrates fetching data from the server.</p>
+            <button onClick={searchEmployee}>Search</button>
+            <input placeholder="Employee id" onChange={(evt) => setId(evt.currentTarget.value) } />
             {contents}
+
         </div>
     );
 
-    async function populateWeatherData() {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/weatherforecast`);
-            const data = await response.json();
-            setForecasts(data);
+    async function searchEmployee() {
+
+        if (id != "") {
+            const response = await fetch(`${import.meta.env.VITE_API_URL_Prod}/employee/getemployeebyid`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify( id )
+            });
+            const employee: Employee = await response.json();
+
+            setEmployee(employee);
+        }
     }
 }
 
