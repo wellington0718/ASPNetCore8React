@@ -3,7 +3,8 @@ import { Person, Key, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-
+import { login,  } from '../services/sessionService';
+import { UserSession } from "../types";
 export default function LoginForm() {
     interface IFormInput {
         userId: string
@@ -18,7 +19,13 @@ export default function LoginForm() {
     const handleShowHidePassword = () => setShowPassword(!showPassword);
 
     const handleLogin = (data: IFormInput) => {
-        sessionStorage.setItem("UserId", data.userId);
+        const userSession: UserSession = {
+            user: {
+                id: data.userId
+            }
+        }
+
+        login(userSession);
         console.log(data)
         navigate("/LogTimeWeb/UserSession")
     };
@@ -50,7 +57,7 @@ export default function LoginForm() {
                 <TextField
                     label="Id de usuario"
                     variant="outlined"
-                    inputProps={{ autoComplete: 'off' }}
+                     autoComplete='off' 
                     fullWidth
                     {...register("userId", { required: "User id is required" })}
                     error={!!errors.userId}
@@ -70,7 +77,7 @@ export default function LoginForm() {
                     type={showPassword ? "text" : "password"}
                     variant="outlined"
                     fullWidth
-                    inputProps={{ autoComplete: 'off' }}
+                     autoComplete='off'
                     {...register("password", { required: "Password is required" })}
                     error={!!errors.password}
                     margin="normal"

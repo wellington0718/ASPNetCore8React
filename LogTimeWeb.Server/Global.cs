@@ -1,0 +1,11 @@
+﻿global using LogTimeWeb.Server.DataAccess.Repositories;
+global using LogTimeWeb.Server.DataAccess.UnitsOfWorks;
+global using LogTimeWeb.Server.Enums;
+global using LogTimeWeb.Server.Models;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.Data.SqlClient;
+global using System.Data;
+global using Microsoft.IdentityModel.Tokens;
+global using System.IdentityModel.Tokens.Jwt;
+global using System.Security.Claims;
+global using System.Text;

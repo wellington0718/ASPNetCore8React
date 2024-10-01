@@ -1,8 +1,10 @@
-﻿import { experimentalStyled as styled, Box, Button, Stack, Typography, MenuItem, Select, Paper, FormControl, InputLabel } from '@mui/material';
+﻿import { experimentalStyled as styled, Box, Button, Stack, Typography, MenuItem, Select, Paper } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { ExitToApp, Refresh } from '@mui/icons-material';
 import { useStopwatch } from 'react-timer-hook';
 import { useState, useRef } from 'react';
+import { logout, } from '../services/sessionService';
+import { useNavigate } from 'react-router-dom';
 
 const SessionLayout = () => {
     const activities: string[] = ["No activity", "Lunch", "Break"];
@@ -13,6 +15,7 @@ const SessionLayout = () => {
     const date = new Date();
     const loginDate = useRef(`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`);
     const serverContact = useRef(`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`);
+    const navigate = useNavigate();
 
     const formatTime = (hours: number, minutes: number, seconds: number) => {
 
@@ -46,7 +49,7 @@ const SessionLayout = () => {
                 >
                     Refrescar
                 </Button>
-                <Button
+                <Button onClick={() => { logout(); navigate("/LogTimeWeb/login") } }
                     variant="contained"
                     startIcon={<ExitToApp />}
                     style={{ background: '#1F2226', borderRadius: '0.375rem' }}
