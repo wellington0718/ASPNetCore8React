@@ -2,7 +2,8 @@
 import './App.css';
 import Login from './pages/Login';
 import ProtectedRoutes from './components/protectedRoutes';
-import UserSession from './pages/UserSession';
+import UserSession from './pages/home';
+import { DialogsProvider } from '@toolpad/core/useDialogs';
 
 const router = createBrowserRouter([
     {
@@ -27,6 +28,6 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-    return <RouterProvider router={router} />;
+    return <DialogsProvider><RouterProvider router={router} /></DialogsProvider>;
 }
     export default App;

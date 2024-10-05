@@ -7,7 +7,7 @@ public interface ISessionUnitOfWork
     ActiveSessionRepository ActiveSessionRepository { get; }
     CredentialRepository CredentialRepository { get; }
     UserRepository UserRepository { get; }
-    Task<ActiveSession> CreateSession(ClientData newSessionData);
+    Task<ActiveSession> CreateSession(string userId);
     Task CloseExistingSessions(string paddedUserId, string loggedOutBy = "");
     void Commit();
 }
@@ -44,14 +44,14 @@ public class SessionUnitOfWork(IConfiguration configuration) :
         userRepository = null;
     }
 
-    public async Task<ActiveSession> CreateSession(ClientData newSessionData)
+    public async Task<ActiveSession> CreateSession(string userId)
     {
         var newSessionLog =
-            await CreateSessionLog(newSessionData.Credential.User, newSessionData.HostName, newSessionData.ClientVersion);
+            await CreateSessionLog(userId);
 
         var newActivityLog = await CreateActivityLog(newSessionLog);
 
-        return await CreateActiveSession(newActivityLog, newSessionData.Credential.User);
+        return await CreateActiveSession(newActivityLog, userId);
     }
 
     public async Task<IEnumerable<SessionLog>> GetActiveSessions(string usersIds)
@@ -117,7 +117,8 @@ public class SessionUnitOfWork(IConfiguration configuration) :
             UserId = paddedUserId,
             ActualStatusHistoryId = newActivityLog.Id,
             StartDate = DateTime.Now,
-            ClientVersion = "LogTimeWeb"
+            ClientVersion = "LogTimeWeb",
+            MachineName = Environment.MachineName
         };
         activeSession.Id = await ActiveSessionRepository.AddAsync(activeSession);
 
@@ -137,15 +138,15 @@ public class SessionUnitOfWork(IConfiguration configuration) :
         return activityLog;
     }
 
-    private async Task<SessionLog> CreateSessionLog(string paddedUserId, string hostName, string clientVersion)
+    private async Task<SessionLog> CreateSessionLog(string paddedUserId)
     {
-        var startDate = DateTime.Now;
+        var startDate = DateTime.UtcNow;
         var sessionLog = new SessionLog
         {
             LoginDate = startDate,
             LastTimeConnectionAlive = startDate,
             IdUser = paddedUserId,
-            Hostname = hostName,
+            Hostname = Environment.MachineName,
             ClientVersion = "LogTimeWeb"
         };
         sessionLog.Id = await SessionLogRepository.AddAsync(sessionLog);

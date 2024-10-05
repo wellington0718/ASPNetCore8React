@@ -44,15 +44,14 @@ public class SessionLogRepository
     public async Task UpdateAsync(SessionLog entity)
     {
         const string sql =
-            @"UPDATE LogHistory  
+        @"UPDATE LogHistory  
                     SET 
                         IdUser = @IdUser,  
-                        //Hostname = @Hostname,
-                        Hostname = 'PRUEBA'
+                        Hostname = @Hostname,
                         LogedOutBy = @LogedOutBy,
                         LastTimeConnectionAlive = @LastTimeConnectionAlive,
                         LoginDate = @LoginDate,
-                        LogoutDate = @LogoutDate
+                        LogoutDate = @LogoutDate,
                         ClientVersion = @ClientVersion
                     WHERE 
                         Id = @Id;";

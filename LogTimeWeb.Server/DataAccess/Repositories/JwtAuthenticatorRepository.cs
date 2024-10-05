@@ -20,7 +20,7 @@ public class JwtAuthenticatorRepository
         {
             Subject = new ClaimsIdentity(new Claim[]
             {
-                new(ClaimTypes.Name, credential.User)
+                new(ClaimTypes.Name, credential.UserId)
             }),
             Expires = DateTime.UtcNow.AddHours(24),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)

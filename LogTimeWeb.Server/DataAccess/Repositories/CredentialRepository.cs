@@ -8,7 +8,7 @@ public class CredentialRepository(DataBaseAccess dataBaseAccess)
     {
         var parameters = new
         {
-            credential.User,
+            User = credential.UserId,
             credential.Password
         };
 

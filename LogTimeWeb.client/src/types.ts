@@ -1,21 +1,111 @@
-export type Group = {
-    id?: number;
-    projectId?: string;
-    project?: string;
-    name?: string;
-    description?: string;
-    logoutTime?: Date;
-};
+export interface IBaseResponse {
+    hasError: boolean;
+    code: number;
+    title: string;
+    message: string;
+    isSessionAlreadyClose: boolean;
+}
+export type Credential = {
+    userId: string
+    password: string
+}
 
-export type StatusLog = {
+export type SessionLogOutData = {
+    id: number
+    userIds: string
+    loggedOutBy: string
+}
+
+export interface IActivityLog extends IBaseResponse {
+    id: number
+    logId: number
+    statusStartTime: Date
+    statusEndTime?: Date
+    statusId: number
+}
+
+export interface ISessionAliveDate extends IBaseResponse {
+    lastDate: Date
+}
+
+export type ActivityChange = {
+    currentActivityLogId: number
+    newActivityId: number
+}
+
+export interface IFetchSessionData extends IBaseResponse {
+    id: number
+    isAlreadyOpened: boolean
+    currentRemoteHost: string
+}
+
+export interface INewSessionData extends IBaseResponse {
+    user: User;
+    activeSession: ActiveSession;
+}
+
+export type User = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    roleId: number;
+    project: Project;
+    projectGroup?: ProjectGroup;
+    group?: Group 
+}
+
+export type Project = {
+    projectIni: string;
+    projectDesc: string;
+    company: string;
+    availableActivities: Status[];
+}
+
+export type ProjectGroup = {
+    id: number;
+    projectId: string;
+    name: string;
+    groupDescription: string;
+    logOutTime?: Date ;
+}
+
+export type Status = {
+    id: number;
+    description: string;
+    message: string;
+    project: string;
+    idleTime?: number;
+    enabled: boolean;
+}
+
+export type Group = {
+    id: number;
+    projectId: string;
+    name: string;
+    description?: string;
+    logOutTime?: Date;
+}
+
+type StatusLog = {
     id?: number;
     loginLogId?: number;
-    statusStartTime?: Date;
+    statusStartTime: Date;
     statusEndTime?: Date;
-    statusId?: number;
-};
+    statusId: number;
+}
 
-export type LoginLog = {
+export type ActiveSession = {
+    id: number;
+    userId: string;
+    actualLogHistoryId: number;
+    actualStatusHistoryId: number;
+    statusId: number;
+    startDate: Date;
+    clientVersion: string;
+    machineName: string;
+}
+
+type LoginLog = {
     activeLogId?: number;
     loggedOutBy?: string;
     loginDate?: Date;
@@ -23,66 +113,26 @@ export type LoginLog = {
     host?: string;
     currentStatusLogEntry?: StatusLog;
     currentHistoryLogId?: number;
-};
-
-export type Activity = {
-    id?: number;
-    description?: string;
-    message?: string;
-    project?: string;
-    idleTime?: number;
-    enabled?: boolean;
-};
+}
 
 export type UserSession = {
-    user?: User;
-    group?: Group;
-    currentLogEntry?: LoginLog;
+    user: User;
+    //currentLogEntry: LoginLog;
     loginTime?: string;
     sessionTime?: string;
     loggedOutBy?: string;
     activityTime?: string;
     serverLastContact?: string;
-    connectionId?: string;
-    selectedActivity?: Activity;
-    activityTimeSpan?: string;
+
+    selectedActivity?: Status;
+    activityTotalSecs: number;
     idleTimeSpan?: string;
-    sessionTimeSpan?: string;
+    sessionTotalSecs: number;
     generalTimeSpan?: string;
+    historyLogId: number;
+    activityId: number;
     isClosedInactivity?: boolean;
     isSessionTimerEnabled?: boolean;
     isActivityTimerEnabled?: boolean;
 };
 
-export type Project = {
-    id?: string;
-    project_Ini?: string;
-    project_Desc?: string;
-    company?: string;
-    activities?: Activity[];
-};
-
-export type ProjectGroup = {
-    id?: number;
-    projectId?: string;
-    name?: string;
-    groupDescription?: string;
-    logOutTime?: Date | null;
-};
-
-export type User = {
-    id?: string;
-    firstName?: string;
-    lastName?: string;
-    projectName?: string;
-    projectId?: string;
-    projectIni?: string;
-    companyId?: string;
-    companyCode?: string;
-    department?: string;
-    roleId?: number;
-    project?: Project;
-    projectGroup?: ProjectGroup;
-    group?: Group;
-    permission?: number;
-};

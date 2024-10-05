@@ -24,7 +24,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-app.UsePathBase("/LogTimeWeb");
+app.UsePathBase("/LogTimeWeb/api");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

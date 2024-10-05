@@ -9,4 +9,5 @@ public class ActiveSession
     public int StatusId { get; set; }
     public DateTime StartDate { get; set; }
     public string ClientVersion { get; set; }
+    public string MachineName { get; set; }
 }

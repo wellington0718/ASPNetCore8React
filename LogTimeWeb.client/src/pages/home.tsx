@@ -1,31 +1,33 @@
 ﻿import { experimentalStyled as styled, Box, Button, Stack, Typography, MenuItem, Select, Paper } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { ExitToApp, Refresh } from '@mui/icons-material';
-import { useStopwatch } from 'react-timer-hook';
-import { useState, useRef } from 'react';
-import { logout, } from '../services/sessionService';
+import { useMemo, useRef, useState } from 'react';
+import { logOut, getUserSession, saveUserSession } from '../services/sessionService';
 import { useNavigate } from 'react-router-dom';
+import LogTimeWebApi from '../repositories/logTimeWebApi';
+import { SessionLogOutData } from '../types';
+import moment from 'moment';
+import useSessionTimer from '../hooks/useSessionTimer';
 
-const SessionLayout = () => {
-    const activities: string[] = ["No activity", "Lunch", "Break"];
-    const [currentActivity, setCurrentActivity] = useState(activities[0]);
+const Home = () => {
 
-    const sessionTimer = useStopwatch({ autoStart: true });
-    const activityTimer = useStopwatch({ autoStart: true });
-    const date = new Date();
-    const loginDate = useRef(`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`);
-    const serverContact = useRef(`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`);
+    const logTimeWebApi = useMemo(() => new LogTimeWebApi(), []);
+    const userSessionRef = useRef(getUserSession());
+    const [currentActivity, setCurrentActivity] = useState("1");
+    const [serverLastContact, setServerLastContact] = useState(userSessionRef.current?.serverLastContact);
+    const { sessionTime, activityTime } = useSessionTimer(logTimeWebApi, userSessionRef, setServerLastContact);
     const navigate = useNavigate();
 
-    const formatTime = (hours: number, minutes: number, seconds: number) => {
-
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-    };
-
-    const changeActivity = (activity: string) => {
+    const changeActivity = async (activity: string) => {
         setCurrentActivity(activity);
-        serverContact.current = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-        activityTimer.reset();
+
+        if (userSessionRef.current != null) {
+            const response = await logTimeWebApi.updateSessionAliveDate(userSessionRef.current.historyLogId);
+            userSessionRef.current.serverLastContact = moment(response.lastDate).format("YYYY-MM-DD HH:mm:ss");
+            userSessionRef.current.activityTotalSecs = 0;
+            setServerLastContact(userSessionRef.current.serverLastContact);
+            saveUserSession(userSessionRef.current);
+        }
     }
 
     const Item = styled(Paper)(({ theme }) => ({
@@ -36,6 +38,24 @@ const SessionLayout = () => {
             backgroundColor: '#1A2027',
         }),
     }));
+
+    const handleLogOut = async () => {
+
+        if (userSessionRef.current != null) {
+            const logoutData: SessionLogOutData = {
+                id: userSessionRef.current.historyLogId,
+                loggedOutBy: userSessionRef.current.user.id,
+                userIds: userSessionRef.current.user.id
+            }
+
+            const response = await logTimeWebApi.closeSession(logoutData);
+
+            if (response.isSessionAlreadyClose) {
+                logOut();
+                navigate("/LogTimeWeb/login")
+            }
+        }
+    }
 
     return (
         <Stack style={{ background: '#30445F', borderRadius: '0.375rem' }} >
@@ -49,7 +69,7 @@ const SessionLayout = () => {
                 >
                     Refrescar
                 </Button>
-                <Button onClick={() => { logout(); navigate("/LogTimeWeb/login") } }
+                <Button onClick={handleLogOut}
                     variant="contained"
                     startIcon={<ExitToApp />}
                     style={{ background: '#1F2226', borderRadius: '0.375rem' }}
@@ -63,37 +83,34 @@ const SessionLayout = () => {
 
                     <Grid size={{ xs: 2, sm: 4, md: 6 }} >
                         <Item>
-                            <Typography variant="body1">Inicio de sesión:</Typography>
+                            <Typography variant="body2">Inicio de sesión:</Typography>
                             <Typography variant="body1">
-                                {/* {currentUsersSession?.LoginTime || '--:--'}*/}
-                                {loginDate.current}
+                                {userSessionRef.current?.loginTime}
                             </Typography>
                         </Item>
                     </Grid>
                     <Grid size={{ xs: 2, sm: 4, md: 6 }}>
                         <Item>
                             <Typography variant="body2">Tiempo de sesión:</Typography>
-                            <Typography>
-                                {/*{currentUsersSession?.SessionTime || '--:--'}*/}
-                                {formatTime(sessionTimer.hours, sessionTimer.minutes, sessionTimer.seconds)}
+                            <Typography variant="body1">
+                                {sessionTime}
                             </Typography>
                         </Item>
                     </Grid>
+
                     <Grid size={{ xs: 2, sm: 4, md: 6 }}>
                         <Item>
                             <Typography variant="body2">Tiempo de actividad:</Typography>
-                            <Typography>
-                                {/*{currentUsersSession?.ActivityTime || '--:--'}*/}
-                                {formatTime(activityTimer.hours, activityTimer.minutes, activityTimer.seconds)}
+                            <Typography variant="body1">
+                                {activityTime}
                             </Typography>
                         </Item>
                     </Grid>
                     <Grid size={{ xs: 2, sm: 4, md: 6 }}>
                         <Item>
                             <Typography variant="body2">Conexión servidor:</Typography>
-                            <Typography>
-                                {/*{currentUsersSession?.ServerLastContact || '--:--'}*/}
-                                {serverContact.current}
+                            <Typography variant="body1">
+                                {serverLastContact}
                             </Typography>
                         </Item>
                     </Grid>
@@ -109,9 +126,9 @@ const SessionLayout = () => {
                     value={currentActivity}
                     onChange={(e) => changeActivity(e.target.value)}
                     style={{ width: '300px', borderRadius: '0.375rem' }} >
-                    {activities.map((activity: string, index: number) => (
-                        <MenuItem key={index} value={activity}>
-                            {activity}
+                    {userSessionRef.current?.user.project.availableActivities.map(activity => (
+                        <MenuItem key={activity.id} value={activity.id}>
+                            {activity.description}
                         </MenuItem>
                     ))}
                 </Select>
@@ -121,4 +138,4 @@ const SessionLayout = () => {
     );
 };
 
-export default SessionLayout;
+export default Home;
