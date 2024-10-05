@@ -3,20 +3,27 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { signIn } from '../services/sessionService';
-import { Credential, IFetchSessionData, SessionLogOutData, INewSessionData } from "../types";
+import { Credential, IFetchSessionData, SessionLogOutData, INewSessionData, BusyDialogState } from "../types";
 import LogTimeWebApi from "../repositories/logTimeWebApi";
-import React from "react";
 import { useDialogs } from '@toolpad/core';
 import BusyDialog from "../components/busyDialog";
 import { Person, Key, VisibilityOff, Visibility } from "@mui/icons-material";
 import { AxiosError } from "axios";
+import MainLayout from "../components/mainLayout";
 
- const Login = () => {
+const Login = () => {
 
-    type BusyDialogState = {
-        open: boolean,
-        message: string
-    }
+    const MESSAGE = {
+        VERIFY_CREDENTIALS: "Verificando credenciales, por favor espere",
+        FETCH_SESSIONS: "Buscando sesiones abiertas, por favor espere",
+        CREATE_SESSION: "Creando sesión, por favor espere",
+        UNKNOWN_ERROR: "Error desconocido. Por favor comunicarse con el departamento de IT.",
+        ACTIVE_SESSION: "Ya existe una sesión activa. Deseas cerrarla para continuar?",
+        INVALID_CREDENTIAL: "Las credenciales no son validas.",
+        Close_SESSION: "Cerrando sesión, por favor espere",
+        CONNECTION_ERROR: "No se pudo establecer comunicación con el servidor. Por favor verifique su conexión a la red/internet.",
+        NONE: ""
+    };
 
     const [showPassword, setShowPassword] = useState(false);
     const [busyDialogState, setBusyDialogState] = useState<BusyDialogState>({ open: false, message: "" });
@@ -26,74 +33,82 @@ import { AxiosError } from "axios";
     const dialogs = useDialogs();
     const logTimeWebApi = new LogTimeWebApi();
 
+    const showBusyDialog = (open: boolean, message: string) => setBusyDialogState({ open, message });
     const handleShowHidePassword = () => setShowPassword(!showPassword);
+
+    const closeAndOpenSession = async (fetchedSession: IFetchSessionData, credential: Credential) => {
+        const logoutData: SessionLogOutData = {
+            id: fetchedSession.id,
+            loggedOutBy: credential.userId,
+            userIds: credential.userId
+        };
+
+        const baseResponse = await logTimeWebApi.closeSession(logoutData);
+
+        if (baseResponse.isSessionAlreadyClose) {
+            await createNewSession(credential.userId);
+        }
+    };
+
+    const createNewSession = async (userId: string) => {
+        showBusyDialog(true, MESSAGE.CREATE_SESSION);
+        const sessionData: INewSessionData = await logTimeWebApi.openSession(userId);
+        signIn(sessionData);
+        navigate("/LogTimeWeb/UserSession");
+    };
+
+    const handleError = async (error: unknown) => {
+        if (error instanceof AxiosError) {
+            if (error.response?.data.includes("network-related")) {
+                await dialogs.alert(MESSAGE.CONNECTION_ERROR, { title: "Error de conexión" });
+            } else {
+                await dialogs.alert(error.message, { title: error.response?.statusText });
+            }
+        } else if (error instanceof Error) {
+            await dialogs.alert(error.message, { title: error.name });
+        } else {
+            await dialogs.alert(MESSAGE.UNKNOWN_ERROR, { title: "Error" });
+        }
+    };
 
     const handleLogin = async (credential: Credential) => {
         try {
-            setBusyDialogState(prev => ({ ...prev, open: true, message: "Verificando credenciales, por favor espere" }));
 
-            let baseResponse = await logTimeWebApi.ValidateUser(credential);
+            showBusyDialog(true, MESSAGE.VERIFY_CREDENTIALS);
+            const baseResponse = await logTimeWebApi.ValidateUser(credential);
 
             if (baseResponse.title == "Unauthorized") {
-                await dialogs.alert("Las credenciales no son validas", { title: "No autorizado" });
+                await dialogs.alert(MESSAGE.INVALID_CREDENTIAL, { title: "No autorizado" });
+                showBusyDialog(false, MESSAGE.NONE);
                 return;
             }
 
-            setBusyDialogState(prev => ({ ...prev, open: true, message: "Buscando sesiones abiertas, por favor espere" }));
+            showBusyDialog(true, MESSAGE.FETCH_SESSIONS);
             const fetchedSession: IFetchSessionData = await logTimeWebApi.fetchSession(credential.userId);
 
             if (fetchedSession.isAlreadyOpened) {
-                setBusyDialogState(prev => ({ ...prev, open: false, message: "Buscando sesiones abiertas, por favor espere" }));
-                const option = await dialogs.confirm("Ya existe una sesión activa. Deseas cerrarla para continuar?", { title: "sesión activa" });
+                showBusyDialog(false, MESSAGE.NONE);
+                const option = await dialogs.confirm(MESSAGE.ACTIVE_SESSION, { title: "Sesión activa" });
 
                 if (option) {
-                    const logoutData: SessionLogOutData = {
-                        id: fetchedSession.id,
-                        loggedOutBy: credential.userId,
-                        userIds: credential.userId
-                    }
-
-                    baseResponse = await logTimeWebApi.closeSession(logoutData);
-
-                    if (baseResponse.isSessionAlreadyClose) {
-
-                        setBusyDialogState(prev => ({ ...prev, open: false, message: "Creando nueva sesión, por favor espere" }));
-                        const sessionData: INewSessionData = await logTimeWebApi.openSession(credential.userId);
-                        signIn(sessionData);
-                        navigate("/LogTimeWeb/UserSession")
-                    }
+                    await closeAndOpenSession(fetchedSession, credential);
                 }
             }
             else {
 
-                setBusyDialogState(prev => ({ ...prev, open: false, message: "Creando sesión, por favor espere" }));
-                const sessionData: INewSessionData = await logTimeWebApi.openSession(credential.userId);
-                signIn(sessionData);
-                navigate("/LogTimeWeb/UserSession")
+                await createNewSession(credential.userId);
             }
         } catch (error) {
 
-            if (error instanceof AxiosError) {
-
-                setBusyDialogState(prev => ({ ...prev, open: false, message: "" }));
-
-                if (error.response?.data.includes("network-related")) {
-                    await dialogs.alert("No se pudo establecer comunicación con el servidor. Por favor verificar su conexión a la red/internet.", { title: "Error de conexión" });
-                } else {
-                    await dialogs.alert(error.message, { title: error.response?.statusText });
-                }
-                
-            } else if (error instanceof Error) {
-                await dialogs.alert(error.message, { title: error.name });
-            } else {
-
-                await dialogs.alert("Error desconocido. Por fovaror cominicarse con el departament de IT", { title: "Error" });
-            }
+            handleError(error);
+        }
+        finally {
+            showBusyDialog(false, MESSAGE.NONE);
         }
     };
 
     return (
-        <React.Fragment>
+        <MainLayout>
             <BusyDialog {...busyDialogState} />
             <Box className="bg-[#1F2226]"
                 component="form"
@@ -192,7 +207,7 @@ import { AxiosError } from "axios";
                     </Button>
                 </Card>
             </Box>
-        </React.Fragment>
+        </MainLayout>
     );
 }
 

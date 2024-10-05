@@ -11,13 +11,30 @@ import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { getUserSession, logOut } from '../services/sessionService';
+import { Popover } from '@mui/material';
+import LogTimeWebApi from '../repositories/logTimeWebApi';
+import { BusyDialogState, SessionLogOutData } from '../types';
+import BusyDialog from './busyDialog';
+import { useNavigate } from 'react-router-dom';
 
-const administration = ['Reportes', 'Estados', 'Sesiones activas', 'Grupos'];
-const settings = ['Profile', 'Account', 'Logout'];
+const baseUrl = "http://intranet/SynergiesSystem/LogTime";
+const resources: Array<{ [key: string]: string }> =
+    [
+        { "Reportes": baseUrl },
+        { "Actividades": `${baseUrl}/Activities` },
+        { "Sesiones activas": `${baseUrl}/UsersSessions` },
+        { "Grupos": `${baseUrl}/SaveGroupInactivityTime` }
+    ];
 
 function Header() {
     const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+    const userSession = getUserSession();
+    const [busyDialogState, setBusyDialogState] = useState<BusyDialogState>({ open: false, message: "" });
+    const logTimeWebApi = new LogTimeWebApi();
+    const navigate = useNavigate();
 
     const handleOpenNavMenu = (event: MouseEvent<HTMLElement>) => {
         setAnchorElNav(event.currentTarget);
@@ -34,14 +51,37 @@ function Header() {
         setAnchorElUser(null);
     };
 
+    const showBusyDialog = (open: boolean, message: string) => setBusyDialogState({ open, message });
+
+    const handleLogOut = async () => {
+
+        if (userSession != null) {
+
+            const logoutData: SessionLogOutData = {
+                id: userSession.historyLogId,
+                loggedOutBy: userSession.user.id,
+                userIds: userSession.user.id
+            }
+
+            showBusyDialog(true, "Cerrando sesión, por favor espere");
+            const response = await logTimeWebApi.closeSession(logoutData);
+
+            if (response.isSessionAlreadyClose) {
+                logOut();
+                navigate("/LogTimeWeb/login")
+            }
+        }
+    }
+
     return (
         <AppBar position="fixed" sx={{ bgcolor: "#0065B1" }}>
-            <Container sx={{ minWidth:"100%" }} >
+            <BusyDialog {...busyDialogState} />
+            <Container sx={{ minWidth: "100%" }} >
                 <Toolbar className="flex justify-between">
 
 
                     <Button variant="text" className="border-0 bg-transparent"
-                        onClick={() => {console.info("I'm a button."); }}>
+                        onClick={() => { console.info("I'm a button."); }}>
 
                         <Box className="flex items-center gap-4">
                             <Avatar
@@ -68,7 +108,7 @@ function Header() {
                         </Box>
                     </Button>
 
-                   
+
 
                     <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
                         <IconButton
@@ -97,21 +137,26 @@ function Header() {
                             onClose={handleCloseNavMenu}
                             sx={{ display: { xs: 'block', md: 'none' } }}
                         >
-                            {administration.map((page) => (
-                                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                                    <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
-                                </MenuItem>
-                            ))}
+                            {resources.flatMap((page) =>
+                                Object.entries(page).map(([name, value]) => (
+                                    <MenuItem component="a" key={name} href={value} target="_blank">
+                                        <Typography color="white" sx={{ textAlign: 'center' }}>{name}</Typography>
+                                    </MenuItem>
+                                ))
+                            )}
+
                         </Menu>
                     </Box>
-                   
+
                     <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                          
-                        {administration.map((page) => (
-                            <MenuItem key={page} onClick={handleCloseNavMenu}>
-                                <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
-                            </MenuItem>
-                        ))}
+
+                        {resources.flatMap((page) =>
+                            Object.entries(page).map(([name, value]) => (
+                                <MenuItem component="a" key={name} href={value} target="_blank">
+                                    <Typography color="white" sx={{ textAlign: 'center' }}>{name}</Typography>
+                                </MenuItem>
+                            ))
+                        )}
                     </Box>
                     <Box sx={{ flexGrow: 0 }}>
                         <Tooltip title="Open settings">
@@ -119,7 +164,7 @@ function Header() {
                                 <Avatar alt="WM" src="/static/images/avatar/2.jpg" />
                             </IconButton>
                         </Tooltip>
-                        <Menu
+                        <Popover
                             sx={{ mt: '45px' }}
                             id="menu-appbar"
                             anchorEl={anchorElUser}
@@ -135,12 +180,32 @@ function Header() {
                             open={Boolean(anchorElUser)}
                             onClose={handleCloseUserMenu}
                         >
-                            {settings.map((setting) => (
-                                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                                    <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
-                                </MenuItem>
-                            ))}
-                        </Menu>
+
+                            <Box minWidth="200px"
+                                sx={{
+                                    margin: 'auto',
+                                    p: 3,
+                                    textAlign: 'center',
+                                }}
+                            >
+                                <Typography variant="h6" component="div">
+                                    {userSession?.user.firstName + " " + userSession?.user.lastName}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                                    Proyecto: {userSession?.user.project.project_Desc}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" mb={3}>
+                                    ID: {userSession?.user.id}
+                                </Typography>
+                                <Button onClick={handleLogOut}
+                                    variant="contained"
+                                    color="primary"
+                                    startIcon={<LogoutIcon />}
+                                >
+                                    Logout
+                                </Button>
+                            </Box>
+                        </Popover>
                     </Box>
                 </Toolbar>
             </Container>

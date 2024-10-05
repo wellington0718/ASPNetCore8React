@@ -6,23 +6,10 @@ const FillSessionData = (sessionData: INewSessionData): UserSession => {
     const currentUsersSession: UserSession = {
         user: sessionData.user,
         activityId: 1,
+        activityLogId: sessionData.activeSession.actualStatusHistoryId,
         activityTotalSecs: 0,
         sessionTotalSecs: 0,
         historyLogId: sessionData.activeSession.actualLogHistoryId,
-        //currentLogEntry: 
-        //{
-        //    activeLogId: sessionData.activeSession.id,
-        //    currentHistoryLogId: sessionData.activeSession.actualLogHistoryId,
-        //    loginDate: sessionData.activeSession.startDate,
-        //    host: sessionData.activeSession.machineName,
-        //    currentStatusLogEntry:
-        //    {
-        //        id: sessionData.activeSession.actualStatusHistoryId,
-        //        statusId: 1,
-        //        statusStartTime: sessionData.activeSession.startDate,
-        //        loginLogId: sessionData.activeSession.actualLogHistoryId
-        //    }
-        //}
     }
 
     if (currentUsersSession.user.projectGroup != null) {

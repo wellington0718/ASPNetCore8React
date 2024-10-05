@@ -55,8 +55,8 @@ export type User = {
 }
 
 export type Project = {
-    projectIni: string;
-    projectDesc: string;
+    project_Ini: string;
+    project_Desc: string;
     company: string;
     availableActivities: Status[];
 }
@@ -105,7 +105,7 @@ export type ActiveSession = {
     machineName: string;
 }
 
-type LoginLog = {
+export type LoginLog = {
     activeLogId?: number;
     loggedOutBy?: string;
     loginDate?: Date;
@@ -130,9 +130,14 @@ export type UserSession = {
     sessionTotalSecs: number;
     generalTimeSpan?: string;
     historyLogId: number;
+    activityLogId: number;
     activityId: number;
     isClosedInactivity?: boolean;
     isSessionTimerEnabled?: boolean;
     isActivityTimerEnabled?: boolean;
 };
 
+export type BusyDialogState = {
+    open: boolean,
+    message: string
+}

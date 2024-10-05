@@ -6,8 +6,6 @@ import MainLayout from './components/mainLayout.tsx'
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <MainLayout>
-            <App />
-        </MainLayout>
+        <App />
     </StrictMode>,
 )
