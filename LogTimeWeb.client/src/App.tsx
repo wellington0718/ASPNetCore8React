@@ -2,32 +2,44 @@
 import './App.css';
 import Login from './pages/Login';
 import ProtectedRoutes from './components/protectedRoutes';
-import UserSession from './pages/home';
 import { DialogsProvider } from '@toolpad/core/useDialogs';
+import Home from './pages/home';
+import MainLayout from './components/mainLayout';
 
-const router = createBrowserRouter([
-    {
-        element: <ProtectedRoutes />,
-        children: [
-            {
-                path: "LogTimeWeb/UserSession",
-                element: <UserSession />,
-                //errorElement: <Error />
-            },
-            {
-                path: "/LogTimeWeb",
-                element: <Navigate to="/LogTimeWeb/UserSession"/>,
-            },
-        ]
-    },
-    {
-        path: "LogTimeWeb/login",
-        element: <Login />,
-       // errorElement: <Error />
-    },
-]);
+const router = createBrowserRouter(
+    [
+        {
+            path: "/",
+            element: <MainLayout />,
+            children: [
+                {
+                    element: <ProtectedRoutes />,
+                    children: [
+                        {
+                            path: "/",
+                            element: <Home />,
+                            // errorElement: <Error />,
+                        },
+                        {
+                            path: "UserSession",
+                            element: <Home />,
+                            // errorElement: <Error />,
+                        },
+                    ],
+                },
+                {
+                    path: "login",
+                    element: <Login />,
+                    // errorElement: <Error />,
+                },
+            ],
+        },
+    ],
+    { basename: "/LogTimeWeb" }
+);
+
 
 const App = () => {
     return <DialogsProvider><RouterProvider router={router} /></DialogsProvider>;
 }
-    export default App;
+export default App;

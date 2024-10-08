@@ -1,37 +1,42 @@
 import moment from 'moment';
-import { INewSessionData, UserSession } from '../types';
+import { INewSessionData, LogFile, SessionData } from '../types';
 import CryptoJS from 'crypto-js';
+import { AxiosError } from 'axios';
+import logTimeWebApi from '../repositories/logTimeWebApi';
+import { useDialogs } from '@toolpad/core';
 
-const FillSessionData = (sessionData: INewSessionData): UserSession => {
-    const currentUsersSession: UserSession = {
-        user: sessionData.user,
-        activityId: 1,
-        activityLogId: sessionData.activeSession.actualStatusHistoryId,
+const FillSessionData = (newSessionData: INewSessionData): SessionData => {
+
+    const loginTime = moment(newSessionData.activeSession.startDate).format("YYYY-MM-DD HH:mm:ss");
+
+    const sessionData: SessionData = {
+        user: newSessionData.user,
+        activityLogId: newSessionData.activeSession.actualStatusHistoryId,
+        historyLogId: newSessionData.activeSession.actualLogHistoryId,
+        selectedActivityId: 1,
+        loginTime: loginTime,
+        serverLastContact: loginTime,
         activityTotalSecs: 0,
         sessionTotalSecs: 0,
-        historyLogId: sessionData.activeSession.actualLogHistoryId,
+        activityTime: "00:00:00",
+        sessionTime: "00:00:00",
+        generalTimeSpan: "",
+        idleTimeSpan: "",
+        loggedOutBy: "",
     }
 
-    if (currentUsersSession.user.projectGroup != null) {
-        currentUsersSession.user.group =
+    if (sessionData.user?.projectGroup != null) {
+        sessionData.user.group =
         {
-            id: currentUsersSession.user.projectGroup.id,
-            name: currentUsersSession.user.projectGroup.name,
-            description: currentUsersSession.user.projectGroup.groupDescription,
-            projectId: currentUsersSession.user.projectGroup.projectId,
-            logOutTime: currentUsersSession.user.projectGroup.logOutTime
+            id: sessionData.user.projectGroup.id,
+            name: sessionData.user.projectGroup.name,
+            description: sessionData.user.projectGroup.groupDescription,
+            projectId: sessionData.user.projectGroup.projectId,
+            logOutTime: sessionData.user.projectGroup.logOutTime
         };
     }
 
-    const date = new Date();
-
-    currentUsersSession.selectedActivity = currentUsersSession.user.project.availableActivities.find(activity => activity.id == 1);
-    currentUsersSession.serverLastContact = moment(date).format("YYYY-MM-DD HH:mm:ss");
-    currentUsersSession.loginTime = currentUsersSession.serverLastContact;
-    currentUsersSession.sessionTime = "00:00:00";
-    currentUsersSession.activityTime = "00:00:00";
-
-    return currentUsersSession;
+    return sessionData;
 
     //logFileItem.Message = "Activity changed to: No Activity.";
     //logFileItem.Method = "FillSessionData";
@@ -49,22 +54,43 @@ export const logOut = () => {
     sessionStorage.removeItem("userSession");
 };
 
-export const getUserSession = (): UserSession | null => {
+export const getUserSession = (): SessionData => {
 
     const cipherUserSessionStr = sessionStorage.getItem("userSession");
 
     if (cipherUserSessionStr != null) {
         const userSessionStr = CryptoJS.AES.decrypt(cipherUserSessionStr, "userSession");
-        const res = JSON.parse(userSessionStr.toString(CryptoJS.enc.Utf8)) as UserSession;
-       
-        return res;
+        return userSessionStr ? JSON.parse(userSessionStr.toString(CryptoJS.enc.Utf8)) as SessionData : new SessionData();
     }
-    else {
-        return null;
-    }
+
+    return new SessionData();
 };
 
-export const saveUserSession = (userSession: UserSession) => {
+export const saveUserSession = (userSession: SessionData) => {
     const cipherText = CryptoJS.AES.encrypt(JSON.stringify(userSession), "userSession").toString()
     sessionStorage.setItem("userSession", cipherText);
+};
+
+export const handleError = async (error: unknown, logFile: LogFile) => {
+    logFile.method = "handleError";
+    const dialogs = useDialogs();
+
+    if (error instanceof AxiosError) {
+        if (error.response?.data.includes("network-related")) {
+
+            logFile.message = MESSAGE.CONNECTION_ERROR;
+            await dialogs.alert(MESSAGE.CONNECTION_ERROR, { title: "Error de conexión" });
+        } else {
+            logFile.message = error.message;
+            await dialogs.alert(error.message, { title: error.response?.statusText });
+        }
+    } else if (error instanceof Error) {
+        logFile.message = error.message;
+        await dialogs.alert(error.message, { title: error.name });
+    } else {
+        logFile.message = MESSAGE.UNKNOWN_ERROR;
+        await dialogs.alert(MESSAGE.UNKNOWN_ERROR, { title: "Error" });
+    }
+
+    await logTimeWebApi.writeLogToFileAsync(logFile);
 };

@@ -1,35 +1,21 @@
 ﻿import { Box, Card, Typography, TextField, InputAdornment, IconButton, Button, Avatar } from "@mui/material";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { signIn } from '../services/sessionService';
-import { Credential, IFetchSessionData, SessionLogOutData, INewSessionData, BusyDialogState } from "../types";
+import { Credential, IFetchSessionData, SessionLogOutData, INewSessionData, BusyDialogState, LogFile, MESSAGE } from "../types";
 import LogTimeWebApi from "../repositories/logTimeWebApi";
 import { useDialogs } from '@toolpad/core';
 import BusyDialog from "../components/busyDialog";
 import { Person, Key, VisibilityOff, Visibility } from "@mui/icons-material";
-import { AxiosError } from "axios";
-import MainLayout from "../components/mainLayout";
+import useSessionManager from "../hooks/useSessionManager";
 
 const Login = () => {
 
-    const MESSAGE = {
-        VERIFY_CREDENTIALS: "Verificando credenciales, por favor espere",
-        FETCH_SESSIONS: "Buscando sesiones abiertas, por favor espere",
-        CREATE_SESSION: "Creando sesión, por favor espere",
-        UNKNOWN_ERROR: "Error desconocido. Por favor comunicarse con el departamento de IT.",
-        ACTIVE_SESSION: "Ya existe una sesión activa. Deseas cerrarla para continuar?",
-        INVALID_CREDENTIAL: "Las credenciales no son validas.",
-        Close_SESSION: "Cerrando sesión, por favor espere",
-        CONNECTION_ERROR: "No se pudo establecer comunicación con el servidor. Por favor verifique su conexión a la red/internet.",
-        NONE: ""
-    };
-
+    const logFile: LogFile = { component: "Login" };
     const [showPassword, setShowPassword] = useState(false);
     const [busyDialogState, setBusyDialogState] = useState<BusyDialogState>({ open: false, message: "" });
     const [credential, setCredential] = useState<Credential>({ userId: "", password: "" });
     const { register, handleSubmit, formState: { errors } } = useForm<Credential>({ mode: "onSubmit" });
-    const navigate = useNavigate();
+    const sessionManager = useSessionManager();
     const dialogs = useDialogs();
     const logTimeWebApi = new LogTimeWebApi();
 
@@ -43,7 +29,17 @@ const Login = () => {
             userIds: credential.userId
         };
 
-        const baseResponse = await logTimeWebApi.closeSession(logoutData);
+        showBusyDialog(true, MESSAGE.CLOSE_SESSION);
+        logFile.method = "closeAndOpenSession";
+        logFile.message = "Closing opened session.";
+        await logTimeWebApi.writeLogToFileAsync(logFile);
+
+        const baseResponse = await logTimeWebApi.closeSessionAsync(logoutData);
+
+        showBusyDialog(false, MESSAGE.NONE);
+
+        logFile.message = "Opened session Closed.";
+        await logTimeWebApi.writeLogToFileAsync(logFile);
 
         if (baseResponse.isSessionAlreadyClose) {
             await createNewSession(credential.userId);
@@ -52,42 +48,43 @@ const Login = () => {
 
     const createNewSession = async (userId: string) => {
         showBusyDialog(true, MESSAGE.CREATE_SESSION);
-        const sessionData: INewSessionData = await logTimeWebApi.openSession(userId);
-        signIn(sessionData);
-        navigate("/LogTimeWeb/UserSession");
-    };
 
-    const handleError = async (error: unknown) => {
-        if (error instanceof AxiosError) {
-            if (error.response?.data.includes("network-related")) {
-                await dialogs.alert(MESSAGE.CONNECTION_ERROR, { title: "Error de conexión" });
-            } else {
-                await dialogs.alert(error.message, { title: error.response?.statusText });
-            }
-        } else if (error instanceof Error) {
-            await dialogs.alert(error.message, { title: error.name });
-        } else {
-            await dialogs.alert(MESSAGE.UNKNOWN_ERROR, { title: "Error" });
-        }
+        logFile.method = "createNewSession";
+        logFile.message = "Creating new session.";
+
+        await logTimeWebApi.writeLogToFileAsync(logFile);
+
+        const sessionData: INewSessionData = await logTimeWebApi.openSessionAsync(userId);
+
+        logFile.message = "New session created";
+        await logTimeWebApi.writeLogToFileAsync(logFile);
+        sessionManager.signIn(sessionData);
     };
 
     const handleLogin = async (credential: Credential) => {
         try {
 
             showBusyDialog(true, MESSAGE.VERIFY_CREDENTIALS);
-            const baseResponse = await logTimeWebApi.ValidateUser(credential);
+
+            logFile.method = "handleLogin";
+            logFile.message = "User submitted login form";
+            logFile.userId = credential.userId
+
+            await logTimeWebApi.writeLogToFileAsync(logFile);
+
+            const baseResponse = await logTimeWebApi.validateUserAsync(credential);
+            showBusyDialog(false, MESSAGE.NONE);
 
             if (baseResponse.title == "Unauthorized") {
                 await dialogs.alert(MESSAGE.INVALID_CREDENTIAL, { title: "No autorizado" });
-                showBusyDialog(false, MESSAGE.NONE);
                 return;
             }
 
             showBusyDialog(true, MESSAGE.FETCH_SESSIONS);
-            const fetchedSession: IFetchSessionData = await logTimeWebApi.fetchSession(credential.userId);
+            const fetchedSession: IFetchSessionData = await logTimeWebApi.fetchSessionAsync(credential.userId);
+            showBusyDialog(false, MESSAGE.NONE);
 
             if (fetchedSession.isAlreadyOpened) {
-                showBusyDialog(false, MESSAGE.NONE);
                 const option = await dialogs.confirm(MESSAGE.ACTIVE_SESSION, { title: "Sesión activa" });
 
                 if (option) {
@@ -98,9 +95,10 @@ const Login = () => {
 
                 await createNewSession(credential.userId);
             }
+
         } catch (error) {
 
-            handleError(error);
+            sessionManager.handleError(error, logFile);
         }
         finally {
             showBusyDialog(false, MESSAGE.NONE);
@@ -108,7 +106,7 @@ const Login = () => {
     };
 
     return (
-        <MainLayout>
+        <>
             <BusyDialog {...busyDialogState} />
             <Box className="bg-[#1F2226]"
                 component="form"
@@ -207,7 +205,7 @@ const Login = () => {
                     </Button>
                 </Card>
             </Box>
-        </MainLayout>
+        </>
     );
 }
 

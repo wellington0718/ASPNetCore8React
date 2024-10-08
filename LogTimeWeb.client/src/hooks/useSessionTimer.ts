@@ -2,46 +2,51 @@ import { useState, useEffect, useRef } from 'react';
 import moment from 'moment';
 import { saveUserSession } from '../services/sessionService';
 import LogTimeWebApi from '../repositories/logTimeWebApi';
-import { UserSession } from '../types';
+import { LogFile, SessionData } from '../types';
 
-function useSessionTimer(logTimeWebApi: LogTimeWebApi, userSessionRef: React.MutableRefObject<UserSession | null>,
-    updateServerLastContact: (newServerLastContact: string) => void) {
-
+function useSessionTimer(logTimeWebApi: LogTimeWebApi, userSessionRef: React.MutableRefObject<SessionData>,
+    updateServerLastContact: (newServerLastContact: string) => void, handleError: (e: unknown, logFile: LogFile) => void) {
 
     const [sessionTime, setSessionTime] = useState(userSessionRef.current?.sessionTime);
     const [activityTime, setActivityTime] = useState(userSessionRef.current?.activityTime);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const formatTime = (seconds: number): string => moment.utc(moment.duration(seconds, 'seconds')
-        .asMilliseconds()).format('HH:mm:ss');
+    const formatTime = (seconds: number): string => moment.utc(moment.duration(seconds, 'seconds').asMilliseconds()).format('HH:mm:ss');
+
 
     useEffect(() => {
+
+        const logFile: LogFile = {
+            userId: userSessionRef.current.user?.id,
+            roleId: userSessionRef.current.user?.roleId,
+            component: "Home - useSessionTimer hook"
+        }
+
         const updateSession = async () => {
-            const userSessionCurrent = userSessionRef.current;
 
-            if (userSessionCurrent != null) {
-                userSessionCurrent.sessionTotalSecs += 1;
-                userSessionCurrent.activityTotalSecs += 1;
+            try {
+                userSessionRef.current.sessionTotalSecs += 1;
+                userSessionRef.current.activityTotalSecs += 1;
 
-                userSessionCurrent.sessionTime = formatTime(userSessionCurrent.sessionTotalSecs);
-                userSessionCurrent.activityTime = formatTime(userSessionCurrent.activityTotalSecs);
+                userSessionRef.current.sessionTime = formatTime(userSessionRef.current.sessionTotalSecs);
+                userSessionRef.current.activityTime = formatTime(userSessionRef.current.activityTotalSecs);
 
-                setSessionTime(userSessionCurrent.sessionTime);
-                setActivityTime(userSessionCurrent.activityTime);
+                setSessionTime(userSessionRef.current.sessionTime);
+                setActivityTime(userSessionRef.current.activityTime);
 
-                try {
-                    if (userSessionCurrent.sessionTotalSecs % 60 === 0) {
-                        const response = await logTimeWebApi.updateSessionAliveDate(userSessionCurrent.historyLogId);
-                        userSessionCurrent.serverLastContact = moment(response.lastDate).format("YYYY-MM-DD HH:mm:ss");
-                        updateServerLastContact(userSessionCurrent.serverLastContact);
-                    }
-                } catch (e) {
-                    console.log(e);
+
+
+                if (userSessionRef.current.sessionTotalSecs % 60 === 0) {
+                    const response = await logTimeWebApi.updateSessionAliveDateAsync(userSessionRef.current.historyLogId);
+                    userSessionRef.current.serverLastContact = moment(response.lastDate).format("YYYY-MM-DD HH:mm:ss");
+                    updateServerLastContact(userSessionRef.current.serverLastContact);
                 }
 
-                saveUserSession(userSessionCurrent);
+                saveUserSession(userSessionRef.current);
+            } catch (e) {
+                handleError(e, logFile);
             }
-        };
+        }
 
         intervalRef.current = setInterval(updateSession, 1000);
 
@@ -49,7 +54,7 @@ function useSessionTimer(logTimeWebApi: LogTimeWebApi, userSessionRef: React.Mut
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
 
-    }, [logTimeWebApi, userSessionRef, sessionTime, activityTime, updateServerLastContact]);
+    }, [logTimeWebApi, userSessionRef, sessionTime, activityTime, updateServerLastContact, handleError]);
 
     return { sessionTime, activityTime };
 }

@@ -1,4 +1,6 @@
-﻿namespace LogTimeWeb.Server.Controllers;
+﻿using LogTimeWeb.Server.DataAccess;
+
+namespace LogTimeWeb.Server.Controllers;
 
 [ApiController]
 [Route("[controller]/[action]")]
@@ -229,5 +231,67 @@ public class SessionController(ISessionUnitOfWork unitOfWork) : ApiControllerBas
                 Message = ex.Message
             });
         }
+    }
+
+    [HttpPost]
+    public async Task<string> GetLogFile([FromBody] LogFile logFile)
+    {
+        var logFilePath = $"\\\\AFRODITA\\LogtimeWebLogs\\{PadUserId(logFile.UserId)}.log";
+        byte[] fileBytes;
+        string fileContent;
+
+        if (logFile.RoleId == 1 || logFile.RoleId == 3)
+        {
+            if (!System.IO.File.Exists(logFilePath))
+            {
+                fileContent = "Not Found";
+            }
+            else
+            {
+                fileBytes = await System.IO.File.ReadAllBytesAsync(logFilePath);
+                fileContent = Encoding.UTF8.GetString(fileBytes);
+            }
+
+
+            return fileContent;
+        }
+
+        var userId = await GetUserInDepartmentGroupAsync(logFile.UserId, logFile.ManagerId);
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            fileBytes = await System.IO.File.ReadAllBytesAsync(logFilePath);
+            fileContent = Encoding.UTF8.GetString(fileBytes);
+        }
+        else
+        {
+            fileContent = "Unauthorized";
+        }
+
+        return fileContent;
+    }
+
+    [HttpPost]
+    public async Task WriteLogToFileAsync([FromBody] LogFile logFile)
+    {
+        string logFilePath = $@"C:\LogtimeWebLogs\{PadUserId(logFile.UserId)}.log";
+        string logEntry;
+
+        if (!System.IO.File.Exists(logFilePath))
+        {
+            string headers = $"{"Date",-22}{"|",-3}{"Page",-25}{"|",-3}{"Method",-20}{"|",-3}{"Message"}";
+            string separator = new('-', 100);
+            logEntry = headers + Environment.NewLine + separator + Environment.NewLine;
+
+           await System.IO.File.AppendAllTextAsync(logFilePath, logEntry);
+        }
+
+        logEntry = $"{DateTime.Now,-22:M/d/yyyy h:mm:ss tt}{"|",-3}{logFile.Component,-25}{"|",-3}{logFile.Method,-20}{"|",-3}{logFile.Message}";
+        await System.IO.File.AppendAllTextAsync(logFilePath, logEntry + Environment.NewLine);
+    }
+
+    private async Task<string> GetUserInDepartmentGroupAsync(string userId, string managerId)
+    {
+        return await unitOfWork.SessionLogRepository.GetUserInDepartmentGroupAsync(PadUserId(userId), PadUserId(managerId));
     }
 }

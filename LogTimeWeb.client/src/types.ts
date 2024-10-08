@@ -5,6 +5,7 @@ export interface IBaseResponse {
     message: string;
     isSessionAlreadyClose: boolean;
 }
+
 export type Credential = {
     userId: string
     password: string
@@ -86,14 +87,6 @@ export type Group = {
     logOutTime?: Date;
 }
 
-type StatusLog = {
-    id?: number;
-    loginLogId?: number;
-    statusStartTime: Date;
-    statusEndTime?: Date;
-    statusId: number;
-}
-
 export type ActiveSession = {
     id: number;
     userId: string;
@@ -105,39 +98,45 @@ export type ActiveSession = {
     machineName: string;
 }
 
-export type LoginLog = {
-    activeLogId?: number;
-    loggedOutBy?: string;
-    loginDate?: Date;
-    logoutDate?: Date;
-    host?: string;
-    currentStatusLogEntry?: StatusLog;
-    currentHistoryLogId?: number;
+export class SessionData {
+    user?: User;
+    loginTime: string = "";  
+    sessionTime: string = "";
+    loggedOutBy: string = "";
+    activityTime: string = "";
+    serverLastContact: string = "";
+    selectedActivityId: number = 1;
+    activityTotalSecs: number = 0;
+    sessionTotalSecs: number = 0;
+    idleTimeSpan: string = "";
+    generalTimeSpan: string = "";
+    historyLogId: number = 0;
+    activityLogId: number = 0;
 }
 
-export type UserSession = {
-    user: User;
-    //currentLogEntry: LoginLog;
-    loginTime?: string;
-    sessionTime?: string;
-    loggedOutBy?: string;
-    activityTime?: string;
-    serverLastContact?: string;
-
-    selectedActivity?: Status;
-    activityTotalSecs: number;
-    idleTimeSpan?: string;
-    sessionTotalSecs: number;
-    generalTimeSpan?: string;
-    historyLogId: number;
-    activityLogId: number;
-    activityId: number;
-    isClosedInactivity?: boolean;
-    isSessionTimerEnabled?: boolean;
-    isActivityTimerEnabled?: boolean;
-};
 
 export type BusyDialogState = {
     open: boolean,
     message: string
 }
+
+export type LogFile = {
+    userId?: string;
+    managerId?: string;
+    roleId?: number;
+    method?: string;
+    component?: string;
+    message?: string;
+};
+
+export const MESSAGE = {
+    VERIFY_CREDENTIALS: "Verificando credenciales, por favor espere",
+    FETCH_SESSIONS: "Buscando sesiones abiertas, por favor espere",
+    CREATE_SESSION: "Creando sesión, por favor espere",
+    UNKNOWN_ERROR: "Error desconocido. Por favor comunicarse con el departamento de IT.",
+    ACTIVE_SESSION: "Ya existe una sesión activa. Deseas cerrarla para continuar?",
+    INVALID_CREDENTIAL: "Las credenciales no son validas.",
+    CLOSE_SESSION: "Cerrando sesión, por favor espere",
+    CONNECTION_ERROR: "No se pudo establecer comunicación con el servidor. Por favor verifique su conexión a la red/internet.",
+    NONE: ""
+};

@@ -1,15 +1,8 @@
-﻿using LogTimeWeb.Server.Models;
+﻿namespace LogTimeWeb.Server.DataAccess.Repositories;
 
-namespace LogTimeWeb.Server.DataAccess.Repositories;
-
-public class SessionLogRepository
+public class SessionLogRepository(DataBaseAccess dataBaseAccess)
 {
-    private readonly DataBaseAccess dataBaseAccess;
-
-    public SessionLogRepository(DataBaseAccess dataBaseAccess)
-    {
-        this.dataBaseAccess = dataBaseAccess;
-    }
+    private readonly DataBaseAccess dataBaseAccess = dataBaseAccess;
 
     public async Task<SessionLog> GetAsync(int id)
     {
@@ -20,6 +13,23 @@ public class SessionLogRepository
         var parameters = new { Id = id };
 
         return await dataBaseAccess.LoadFirstOrDefaultAsync<SessionLog, dynamic>(sql, parameters);
+    }
+
+    public async Task<string> GetUserInDepartmentGroupAsync(string userId, string managerId)
+    {
+        const string sql =
+            @"SELECT UserId
+                      FROM 
+                       [SynergiesSystem].[dbo].Employees Emp 
+ 
+                     WHERE 
+                        Emp.UserId = @userId
+                     AND 
+                        Emp.ProjectId in(SELECT ProjectId FROM [SynergiesSystem].[dbo].[DepartmentsApplicationManagement] WHERE ApplicationId = 6 AND ManagerId = @managerId)";
+
+        var parameters = new { userId, managerId };
+
+        return await dataBaseAccess.LoadFirstOrDefaultAsync<string, dynamic>(sql, parameters);
     }
 
     public async Task<int> AddAsync(SessionLog entity)
