@@ -1,4 +1,4 @@
-﻿import { useState, MouseEvent, useMemo } from 'react';
+﻿import { useState, MouseEvent } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -18,7 +18,7 @@ import LogTimeWebApi from '../repositories/logTimeWebApi';
 import { BusyDialogState, LogFile, MESSAGE, SessionLogOutData } from '../types';
 import BusyDialog from './busyDialog';
 import { useNavigate } from 'react-router-dom';
-import { saveAs } from 'file-saver';
+//import { saveAs } from 'file-saver';
 
 import {
     Dialog,
@@ -95,10 +95,10 @@ function Header() {
 
     const showBusyDialog = (open: boolean, message: string) => setBusyDialogState({ open, message });
 
-    const donwlodLogFile = () => {
-        const file = new File([logData.content], `${logFile.userId}.log`, { type: "text/plain;charset=utf-8" });
-        saveAs(file);
-    }
+    //const donwlodLogFile = () => {
+    //    const file = new File([logData.content], `${logFile.userId}.log`, { type: "text/plain;charset=utf-8" });
+    //    saveAs(file);
+    //}
 
     const getLogFile = async () => {
 
@@ -173,18 +173,24 @@ function Header() {
             <Dialog sx={{ '& .MuiDialog-paper': { width: '60%', maxWidth: '60%' } }} open={logData.content != ""} onClose={() => { setLogData({ title: "", content: "" }) }}>
                 <DialogTitle>{`${logData.title}`}</DialogTitle>
                 <DialogContent >
-                    <TextField aria-readonly={true}
-                        variant="outlined"
-                        multiline
-                        sx={{ width: '100%' }}
-                        rows={25}
-                        value={logData.content}
-                    />
+                    <Box
+                        sx={{
+                            fontFamily: 'Courier New, monospace', 
+                            whiteSpace: 'pre',
+                            overflowX: 'auto',
+                            backgroundColor: '#f5f5f5',
+                            padding: '10px',
+                            borderRadius: '4px',
+                        }}
+                    >
+                        <pre>{logData.content}</pre>
+                    </Box>
+                   
                 </DialogContent>
                 <DialogActions>
-                    <Button variant="outlined" onClick={donwlodLogFile} color="success">
-                        Download
-                    </Button>
+                    {/*<Button variant="outlined" onClick={donwlodLogFile} color="success">*/}
+                    {/*    Download*/}
+                    {/*</Button>*/}
 
                     <Button variant="outlined" onClick={() => { setLogData({ title: "", content: "" }) }} color="error">
                         Close

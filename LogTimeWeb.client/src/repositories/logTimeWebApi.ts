@@ -12,7 +12,9 @@ class LogTimeWebApi {
             headers: {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
+               
             },
+            
         });
     }
 
@@ -41,8 +43,9 @@ class LogTimeWebApi {
         return response.data;
     }
 
-    async writeLogToFileAsync(logFile: LogFile) {
-        await this.httpClient.post('session/writeLogToFile', logFile);
+    async writeLogToFileAsync(logFile: LogFile): Promise<boolean>  {
+        const response =  await this.httpClient.post('session/writeLogToFile', logFile);
+        return response.data;
     }
 
     async getLogFileAsync(logFile: LogFile): Promise<string> {

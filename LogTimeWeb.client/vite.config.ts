@@ -43,11 +43,12 @@ export default defineConfig({
     },
     server: {
         proxy: {
-            '^weatherforecast': {
+            '^session': {
                 target,
+
                 secure: false
             },
-            '^employee': {
+            '^activity': {
                 target,
                 secure: false
             }

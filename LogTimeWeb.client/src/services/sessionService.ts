@@ -1,9 +1,9 @@
 import moment from 'moment';
-import { INewSessionData, LogFile, SessionData } from '../types';
+import { INewSessionData, SessionData } from '../types';
 import CryptoJS from 'crypto-js';
-import { AxiosError } from 'axios';
-import logTimeWebApi from '../repositories/logTimeWebApi';
-import { useDialogs } from '@toolpad/core';
+//import { AxiosError } from 'axios';
+//import logTimeWebApi from '../repositories/logTimeWebApi';
+//import { useDialogs } from '@toolpad/core';
 
 const FillSessionData = (newSessionData: INewSessionData): SessionData => {
 
@@ -71,26 +71,26 @@ export const saveUserSession = (userSession: SessionData) => {
     sessionStorage.setItem("userSession", cipherText);
 };
 
-export const handleError = async (error: unknown, logFile: LogFile) => {
-    logFile.method = "handleError";
-    const dialogs = useDialogs();
+//export const handleError = async (error: unknown, logFile: LogFile) => {
+//    logFile.method = "handleError";
+//    const dialogs = useDialogs();
 
-    if (error instanceof AxiosError) {
-        if (error.response?.data.includes("network-related")) {
+//    if (error instanceof AxiosError) {
+//        if (error.response?.data.includes("network-related")) {
 
-            logFile.message = MESSAGE.CONNECTION_ERROR;
-            await dialogs.alert(MESSAGE.CONNECTION_ERROR, { title: "Error de conexión" });
-        } else {
-            logFile.message = error.message;
-            await dialogs.alert(error.message, { title: error.response?.statusText });
-        }
-    } else if (error instanceof Error) {
-        logFile.message = error.message;
-        await dialogs.alert(error.message, { title: error.name });
-    } else {
-        logFile.message = MESSAGE.UNKNOWN_ERROR;
-        await dialogs.alert(MESSAGE.UNKNOWN_ERROR, { title: "Error" });
-    }
+//            logFile.message = MESSAGE.CONNECTION_ERROR;
+//            await dialogs.alert(MESSAGE.CONNECTION_ERROR, { title: "Error de conexión" });
+//        } else {
+//            logFile.message = error.message;
+//            await dialogs.alert(error.message, { title: error.response?.statusText });
+//        }
+//    } else if (error instanceof Error) {
+//        logFile.message = error.message;
+//        await dialogs.alert(error.message, { title: error.name });
+//    } else {
+//        logFile.message = MESSAGE.UNKNOWN_ERROR;
+//        await dialogs.alert(MESSAGE.UNKNOWN_ERROR, { title: "Error" });
+//    }
 
-    await logTimeWebApi.writeLogToFileAsync(logFile);
-};
+//    await logTimeWebApi.writeLogToFileAsync(logFile);
+//};

@@ -70,6 +70,7 @@ const Home = () => {
 
             if (!activeLog.hasError) {
 
+                userSessionRef.current.activityLogId = activeLog.id;
                 if (newActivityId == 2) {
                     //const option = await dialogs.confirm("La sesión será finalizada debido al estado de Lunch. ¿Deseas continuar?", { title: "Cambio de actividad" });
 

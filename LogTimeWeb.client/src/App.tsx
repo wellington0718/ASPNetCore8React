@@ -1,10 +1,11 @@
-﻿import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+﻿import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './App.css';
-import Login from './pages/Login';
+
 import ProtectedRoutes from './components/protectedRoutes';
 import { DialogsProvider } from '@toolpad/core/useDialogs';
 import Home from './pages/home';
 import MainLayout from './components/mainLayout';
+import Login from './pages/login';
 
 const router = createBrowserRouter(
     [
