@@ -15,10 +15,10 @@ public class SessionLogRepository(DataBaseAccess dataBaseAccess)
         return await dataBaseAccess.LoadFirstOrDefaultAsync<SessionLog, dynamic>(sql, parameters);
     }
 
-    public async Task<string> GetUserInDepartmentGroupAsync(string userId, string managerId)
+    public async Task<bool> IsUserInDepartmentGroupAsync(string userId, string managerId)
     {
         const string sql =
-            @"SELECT UserId
+            @"SELECT 1
                       FROM 
                        [SynergiesSystem].[dbo].Employees Emp 
  
@@ -29,7 +29,7 @@ public class SessionLogRepository(DataBaseAccess dataBaseAccess)
 
         var parameters = new { userId, managerId };
 
-        return await dataBaseAccess.LoadFirstOrDefaultAsync<string, dynamic>(sql, parameters);
+        return await dataBaseAccess.LoadFirstOrDefaultAsync<bool, dynamic>(sql, parameters);
     }
 
     public async Task<int> AddAsync(SessionLog entity)

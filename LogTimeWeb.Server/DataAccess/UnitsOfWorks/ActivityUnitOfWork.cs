@@ -9,7 +9,7 @@ public interface IActivityUnitOfWork
 }
 
 public class ActivityUnitOfWork(IConfiguration configuration) : 
-    GenericUnitOfWork(new SqlConnection(configuration.GetConnectionString(nameof(ConnectionStringName.LogTime)))), IActivityUnitOfWork
+    GenericUnitOfWork(new SqlConnection(configuration.GetConnectionString(nameof(ConnectionStringName.LogTimeWeb)))), IActivityUnitOfWork
 {
     private ActivityLogRepository activityLogRepository;
     public ActivityLogRepository ActivityLogRepository =>

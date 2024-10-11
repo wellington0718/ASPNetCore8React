@@ -1,4 +1,7 @@
-﻿namespace LogTimeWeb.Server.DataAccess.Repositories;
+﻿using Dapper;
+using MySql.Data.MySqlClient;
+
+namespace LogTimeWeb.Server.DataAccess.Repositories;
 
 public class ActiveSessionRepository(DataBaseAccess dataBaseAccess)
 {
@@ -45,6 +48,7 @@ public class ActiveSessionRepository(DataBaseAccess dataBaseAccess)
             @"INSERT INTO ActiveLog(UserId, ActualLogHistoryId, ActualStatusHistoryId, StatusId, ClientVersion)
                 VALUES(@UserId, @ActualLogHistoryId, @ActualStatusHistoryId, @StatusId, @ClientVersion);
                 SELECT SCOPE_IDENTITY();";
+
         var parameters = new
         {
             entity.UserId,

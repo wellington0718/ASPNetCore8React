@@ -12,17 +12,25 @@ public enum StoreProcedure
 
 public enum ConnectionStringName
 {
-    LogTime
+    LogTimeWeb
 }
 
 public enum ResponseTitle
 {
     Ok,
     Unauthorized,
-    Error
+    Error,
+    OnLeave
 }
 
 public enum ResponseMessage
 {
     Success
+}
+
+public enum Role
+{
+    Admin = 1,
+    Supervior = 2,
+    Agent = 3
 }

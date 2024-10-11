@@ -66,32 +66,54 @@ const Login = () => {
 
             showBusyDialog(true, MESSAGE.VERIFY_CREDENTIALS);
 
+            credential.userId = credential.userId.padStart(8, "0");
             logFile.method = "handleLogin";
-            logFile.message = "User submitted login form";
             logFile.userId = credential.userId
 
-            await logTimeWebApi.writeLogToFileAsync(logFile);
 
             const baseResponse = await logTimeWebApi.validateUserAsync(credential);
             showBusyDialog(false, MESSAGE.NONE);
 
-            if (baseResponse.title == "Unauthorized") {
+            if (baseResponse.title == "On leave") {
+
+                logFile.message = "Access Denied: On leave period";
+                await logTimeWebApi.writeLogToFileAsync(logFile);
+                await dialogs.alert(MESSAGE.NO_ACCESS, { title: "No autorizado" });
+                return;
+            }
+            else if (baseResponse.title == "Unauthorized") {
+                logFile.message = "Access Denied: Invalid credentials";
+                await logTimeWebApi.writeLogToFileAsync(logFile);
                 await dialogs.alert(MESSAGE.INVALID_CREDENTIAL, { title: "No autorizado" });
                 return;
             }
 
             showBusyDialog(true, MESSAGE.FETCH_SESSIONS);
+            logFile.message = "Searching for prevoius active sessions";
+            await logTimeWebApi.writeLogToFileAsync(logFile);
+
             const fetchedSession: IFetchSessionData = await logTimeWebApi.fetchSessionAsync(credential.userId);
             showBusyDialog(false, MESSAGE.NONE);
 
             if (fetchedSession.isAlreadyOpened) {
+                logFile.message = "A prevoius active session was found";
+                await logTimeWebApi.writeLogToFileAsync(logFile);
+
                 const option = await dialogs.confirm(MESSAGE.ACTIVE_SESSION, { title: "Sesión activa" });
 
                 if (option) {
+
+                    logFile.message = "Closing previous active session";
+                    await logTimeWebApi.writeLogToFileAsync(logFile);
                     await closeAndOpenSession(fetchedSession, credential);
+                    logFile.message = "previous active session Closed";
+                    await logTimeWebApi.writeLogToFileAsync(logFile);
                 }
             }
             else {
+
+                logFile.message = "No prevoius active session found";
+                await logTimeWebApi.writeLogToFileAsync(logFile);
 
                 await createNewSession(credential.userId);
             }
@@ -108,7 +130,7 @@ const Login = () => {
     return (
         <>
             <BusyDialog {...busyDialogState} />
-            <Box className="bg-[#1F2226]"
+            <Box className="bg-[#0D3B70]"
                 component="form"
                 onSubmit={handleSubmit(handleLogin)}
                 sx={{
@@ -149,7 +171,7 @@ const Login = () => {
                         helperText={errors.userId ? errors.userId.message : ""}
                         slotProps={{
                             input: {
-                                startAdornment: (<InputAdornment position="start"> <Person sx={{ color: "#0065b1" }} /> </InputAdornment>)
+                                startAdornment: (<InputAdornment position="start"> <Person sx={{ color: "#1F2226" }} /> </InputAdornment>)
                             }
                         }}
                         value={credential.userId}
@@ -169,14 +191,14 @@ const Login = () => {
                         slotProps={{
 
                             input: {
-                                startAdornment: (<InputAdornment position="start">  <Key sx={{ color: "#0065b1" }} /></InputAdornment>),
+                                startAdornment: (<InputAdornment position="start">  <Key sx={{ color: "#1F2226" }} /></InputAdornment>),
 
                                 endAdornment: (<InputAdornment position="end">
                                     <IconButton onClick={handleShowHidePassword} edge="end">
                                         {showPassword ? (
-                                            <VisibilityOff sx={{ color: "#0065b1" }} />
+                                            <VisibilityOff sx={{ color: "#1F2226" }} />
                                         ) : (
-                                            <Visibility sx={{ color: "#0065b1" }} />
+                                            <Visibility sx={{ color: "#1F2226" }} />
                                         )}
                                     </IconButton>
                                 </InputAdornment>
@@ -195,7 +217,7 @@ const Login = () => {
                         fullWidth
                         variant="contained"
                         sx={{
-                            backgroundColor: "#0065b1",
+                            backgroundColor: "#1F2226",
                             padding: "12px 0",
                             borderRadius: "10px",
                             mt: 2,

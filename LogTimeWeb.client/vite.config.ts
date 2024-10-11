@@ -59,5 +59,5 @@ export default defineConfig({
             cert: fs.readFileSync(certFilePath),
         }
     },
-    base: '/LogTimeWeb'
+    base: '/logtimeweb/'
 })

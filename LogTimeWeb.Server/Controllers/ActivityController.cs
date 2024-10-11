@@ -7,7 +7,7 @@ public class ActivityController(ISessionUnitOfWork unitOfWork) : ApiControllerBa
     private readonly ISessionUnitOfWork unitOfWork = unitOfWork;
 
     [HttpPost]
-    public async Task<ActionResult> Change(ActivityChange activityChange)
+    public async Task<ActionResult> Change([FromBody] ActivityChange activityChange)
     {
         try
         {
@@ -42,7 +42,7 @@ public class ActivityController(ISessionUnitOfWork unitOfWork) : ApiControllerBa
 
             var currentDateTime = DateTime.Now;
 
-            if (sessionLog.LastTimeConnectionAlive.HasValue
+            if (sessionLog.LogoutDate.HasValue
                 && RelevantTimeDifference(currentDateTime, sessionLog.LastTimeConnectionAlive.Value))
             {
                 return CreateResponse(new BaseResponse

@@ -12,23 +12,15 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { getUserSession, logOut } from '../services/sessionService';
 import { Popover } from '@mui/material';
 import LogTimeWebApi from '../repositories/logTimeWebApi';
 import { BusyDialogState, LogFile, MESSAGE, SessionLogOutData } from '../types';
 import BusyDialog from './busyDialog';
-import { useNavigate } from 'react-router-dom';
-//import { saveAs } from 'file-saver';
-
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 import { useDialogs } from '@toolpad/core';
 import { AxiosError } from 'axios';
+import useSessionManager from '../hooks/useSessionManager';
+import { getUserSession } from '../services/sessionService';
 
 const baseUrl = "http://intranet/SynergiesSystem/LogTime";
 const resources: Array<{ [key: string]: string }> =
@@ -44,11 +36,12 @@ function Header() {
     const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
     const userSession = getUserSession();
+    const sessionManager = useSessionManager();
     const [busyDialogState, setBusyDialogState] = useState<BusyDialogState>({ open: false, message: "" });
     const logTimeWebApi = new LogTimeWebApi();
-    const navigate = useNavigate();
     const dialogs = useDialogs();
     const [logData, setLogData] = useState<{ title: string, content: string }>({ title: "", content: "" });
+    const userInitials = `${userSession.user?.firstName.substring(0, 1)}${userSession.user?.lastName.substring(0, 1)}`;
 
     const logFile: LogFile = {
         userId: userSession.user?.id,
@@ -95,10 +88,16 @@ function Header() {
 
     const showBusyDialog = (open: boolean, message: string) => setBusyDialogState({ open, message });
 
-    //const donwlodLogFile = () => {
-    //    const file = new File([logData.content], `${logFile.userId}.log`, { type: "text/plain;charset=utf-8" });
-    //    saveAs(file);
-    //}
+    const donwlodLogFile = async () => {
+
+        const blob = new Blob([logData.content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `${logFile.userId}.log`;
+        link.href = url; 
+        link.click();
+        URL.revokeObjectURL(url);
+    };
 
     const getLogFile = async () => {
 
@@ -127,6 +126,11 @@ function Header() {
             if (response == "Unauthorized") {
                 dialogs.alert(`Empleado con ID ${logFile.userId} no pertenece a los grupos departamentales que tienes asignados. Si esta información es incorrecta, por favor contacte al departamento de IT.`, { title: "No autorizado" });
                 return;
+            }
+            else if(response == "NotFound") {
+                dialogs.alert(`El archivo ${logFile.userId}.log no existe`, { title: "No encontrado" });
+                    return;
+                
             }
 
             setLogData({ title: `${logFile.userId}.log`, content: response });
@@ -161,23 +165,30 @@ function Header() {
                 logFile.message = "Session closed";
                 await logTimeWebApi.writeLogToFileAsync(logFile);
 
-                logOut();
                 showBusyDialog(false, "");
-                navigate("/login")
+                sessionManager.logOut();
             }
         }
     }
 
     return (
         <>
-            <Dialog sx={{ '& .MuiDialog-paper': { width: '60%', maxWidth: '60%' } }} open={logData.content != ""} onClose={() => { setLogData({ title: "", content: "" }) }}>
+            <Dialog sx={{ '& .MuiDialog-paper': { width: '60%', maxWidth: '60%' } }}
+                disableEscapeKeyDown
+                open={logData.content != ""}
+                onClose={(_, reason) => {
+                   
+                    if (reason !== 'backdropClick') {
+                        setLogData({ title: "", content: "" });
+                    }
+                }}>
                 <DialogTitle>{`${logData.title}`}</DialogTitle>
                 <DialogContent >
                     <Box
                         sx={{
-                            fontFamily: 'Courier New, monospace', 
+                            fontFamily: 'Courier New, monospace',
                             whiteSpace: 'pre',
-                            overflowX: 'auto',
+                            overflow: 'auto',
                             backgroundColor: '#f5f5f5',
                             padding: '10px',
                             borderRadius: '4px',
@@ -185,12 +196,12 @@ function Header() {
                     >
                         <pre>{logData.content}</pre>
                     </Box>
-                   
+
                 </DialogContent>
                 <DialogActions>
-                    {/*<Button variant="outlined" onClick={donwlodLogFile} color="success">*/}
-                    {/*    Download*/}
-                    {/*</Button>*/}
+                    <Button variant="outlined" onClick={donwlodLogFile} color="success">
+                        Download
+                    </Button>
 
                     <Button variant="outlined" onClick={() => { setLogData({ title: "", content: "" }) }} color="error">
                         Close
@@ -200,15 +211,14 @@ function Header() {
                 </DialogActions>
             </Dialog>
 
-            <AppBar sx={{ bgcolor: "#30445f" }}>
+            <AppBar sx={{ bgcolor: "#0D3B70" }}>
 
                 <BusyDialog {...busyDialogState} />
                 <Container sx={{ minWidth: "100%" }} >
                     <Toolbar className="flex justify-between">
 
 
-                        <Button variant="text" className="border-0 bg-transparent"
-                            onClick={() => { console.info("I'm a button."); }}>
+                        <Button variant="text" className="border-0 bg-transparent">
 
                             <Box className="flex items-center gap-4">
                                 <Avatar
@@ -295,13 +305,13 @@ function Header() {
                                     <Typography color="white" sx={{ textAlign: 'center' }}>Log</Typography>
                                 </MenuItem>
                             )}
-                            
+
                         </Box>
                         {userSession.user != null && (
                             <Box sx={{ flexGrow: 0 }}>
                                 <Tooltip title="Open settings">
                                     <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                        <Avatar alt="WM" src="/static/images/avatar/2.jpg" />
+                                        <Avatar sx={{ bgcolor: "#1f2226" }}>{userInitials }</Avatar>
                                     </IconButton>
                                 </Tooltip>
                                 <Popover
@@ -337,9 +347,9 @@ function Header() {
                                         <Typography variant="body2" color="text.secondary" mb={3}>
                                             ID: {userSession.user.id}
                                         </Typography>
-                                        <Button onClick={handleLogOut}
+                                        <Button onClick={handleLogOut} 
                                             variant="contained"
-                                            color="primary"
+                                            style={{ background: '#1F2226'}}
                                             startIcon={<LogoutIcon />}
                                         >
                                             Logout

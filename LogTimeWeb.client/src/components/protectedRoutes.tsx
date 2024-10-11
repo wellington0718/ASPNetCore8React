@@ -5,7 +5,7 @@ const ProtectedRoutes = () => {
     const user = getUserSession().user;
     const localtion = useLocation();
 
-    return (user ? (<Outlet />) : (<Navigate to="/login" state={localtion} />));
+    return (user ? (<Outlet />) : (<Navigate to="/logtimeweb/login" state={localtion} />));
 
 }
 

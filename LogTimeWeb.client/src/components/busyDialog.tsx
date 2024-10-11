@@ -10,7 +10,7 @@ type BusyDialogState = {
 
 const BusyDialog = ({ message, open }: BusyDialogState) => {
     return (
-        <Dialog open={open} aria-labelledby="busy-dialog-title">
+        <Dialog open={open}>
             <DialogContent style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <Typography>{message}</Typography>
                 <CircularProgress size="30px" />

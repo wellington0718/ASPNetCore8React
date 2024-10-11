@@ -1,6 +1,6 @@
 ﻿namespace LogTimeWeb.Server.Models;
 
-public struct LogFile
+public class LogFile
 {
     public string UserId { get; set; }
     public string ManagerId { get; set; }

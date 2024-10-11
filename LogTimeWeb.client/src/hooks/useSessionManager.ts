@@ -50,13 +50,13 @@ const useSessionManager = () => {
         const sessionData = fillSessionData(userSession);
         const cipherText = CryptoJS.AES.encrypt(JSON.stringify(sessionData), "userSession").toString();
         sessionStorage.setItem("userSession", cipherText);
-        navigate("/UserSession");
+        navigate("/logtimeweb/");
     }, [fillSessionData, navigate]);
 
     // Function to log out the user
     const logOut = useCallback(() => {
         sessionStorage.removeItem("userSession");
-        navigate("/login");
+        navigate("/logtimeweb/login");
     }, [navigate]);
 
     // Function to get the current user session

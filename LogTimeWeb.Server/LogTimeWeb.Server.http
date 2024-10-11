@@ -1,6 +1,10 @@
-@ASPNetCore8React.Server_HostAddress = http://localhost:5109/ReactWithASP
+@LogTimeWeb.Server_HostAddress = http://localhost:5109/LogTimeWeb/session
 
-GET {{ASPNetCore8React.Server_HostAddress}}/weatherforecast/
+POST {{LogTimeWeb.Server_HostAddress}}/ValidateUser
+
 Accept: application/json
+Content-Type: application/json
+
+{"userId": "2929","password": "dsdsdsd"}
 
 ###

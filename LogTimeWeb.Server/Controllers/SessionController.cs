@@ -1,18 +1,14 @@
-﻿using LogTimeWeb.Server.DataAccess;
-
-namespace LogTimeWeb.Server.Controllers;
+﻿namespace LogTimeWeb.Server.Controllers;
 
 [ApiController]
 [Route("[controller]/[action]")]
-public class SessionController(ISessionUnitOfWork unitOfWork) : ApiControllerBase
+public class SessionController(ISessionUnitOfWork unitOfWork, IConfiguration configuration) : ApiControllerBase
 {
-    private readonly ISessionUnitOfWork unitOfWork = unitOfWork;
+    private readonly string fileLogRootPath = configuration.GetSection("LogFile").GetValue<string>("RootPath");
 
     [HttpPost]
     public async Task<ActionResult> Open([FromBody] string userId)
     {
-        userId = PadUserId(userId);
-
         try
         {
             await unitOfWork.CloseExistingSessions(userId);
@@ -158,7 +154,7 @@ public class SessionController(ISessionUnitOfWork unitOfWork) : ApiControllerBas
         {
             var openedSessions = (
                 await unitOfWork.SessionLogRepository
-                .GetActiveByUserIdAsync(PadUserId(userId)))
+                .GetActiveByUserIdAsync(userId))
                 .ToList();
 
             if (openedSessions.Count == 0)
@@ -197,10 +193,10 @@ public class SessionController(ISessionUnitOfWork unitOfWork) : ApiControllerBas
     {
         try
         {
-            credential.UserId = PadUserId(credential.UserId);
             var isValidUser = await unitOfWork.CredentialRepository.ValidateAsync(credential);
+            var isUserOnLeave = await unitOfWork.UserRepository.IsUserLeaveReson(credential.UserId);
 
-            if (isValidUser)
+            if (isValidUser && !isUserOnLeave)
             {
                 return CreateResponse(new BaseResponse
                 {
@@ -208,6 +204,16 @@ public class SessionController(ISessionUnitOfWork unitOfWork) : ApiControllerBas
                     Code = StatusCodes.Status200OK,
                     Title = nameof(ResponseTitle.Ok),
                     Message = "Authorized"
+                });
+            }
+            else if (isValidUser && isUserOnLeave)
+            {
+                return CreateResponse(new BaseResponse
+                {
+                    HasError = false,
+                    Code = StatusCodes.Status200OK,
+                    Title = nameof(ResponseTitle.OnLeave),
+                    Message = "Unauthorized"
                 });
             }
             else
@@ -236,62 +242,54 @@ public class SessionController(ISessionUnitOfWork unitOfWork) : ApiControllerBas
     [HttpPost]
     public async Task<string> GetLogFile([FromBody] LogFile logFile)
     {
-        var logFilePath = $"\\\\AFRODITA\\LogtimeWebLogs\\{PadUserId(logFile.UserId)}.log";
-        byte[] fileBytes;
-        string fileContent;
-
-        if (logFile.RoleId == 1 || logFile.RoleId == 3)
-        {
-            if (!System.IO.File.Exists(logFilePath))
-            {
-                fileContent = "Not Found";
-            }
-            else
-            {
-                fileBytes = await System.IO.File.ReadAllBytesAsync(logFilePath);
-                fileContent = Encoding.UTF8.GetString(fileBytes);
-            }
-
-
-            return fileContent;
-        }
-
-        var userId = await GetUserInDepartmentGroupAsync(logFile.UserId, logFile.ManagerId);
-
-        if (!string.IsNullOrEmpty(userId))
-        {
-            fileBytes = await System.IO.File.ReadAllBytesAsync(logFilePath);
-            fileContent = Encoding.UTF8.GetString(fileBytes);
-        }
-        else
-        {
-            fileContent = "Unauthorized";
-        }
-
-        return fileContent;
-    }
-
-    [HttpPost]
-    public async Task WriteLogToFileAsync([FromBody] LogFile logFile)
-    {
-        string logFilePath = $@"C:\LogtimeWebLogs\{PadUserId(logFile.UserId)}.log";
-        string logEntry;
+        var logFilePath = Path.Combine(fileLogRootPath, $"{logFile.UserId}.log");
 
         if (!System.IO.File.Exists(logFilePath))
         {
-            string headers = $"{"Date",-22}{"|",-3}{"Page",-25}{"|",-3}{"Method",-20}{"|",-3}{"Message"}";
-            string separator = new('-', 100);
-            logEntry = headers + Environment.NewLine + separator + Environment.NewLine;
-
-           await System.IO.File.AppendAllTextAsync(logFilePath, logEntry);
+            return "NotFound";
         }
 
-        logEntry = $"{DateTime.Now,-22:M/d/yyyy h:mm:ss tt}{"|",-3}{logFile.Component,-25}{"|",-3}{logFile.Method,-20}{"|",-3}{logFile.Message}";
-        await System.IO.File.AppendAllTextAsync(logFilePath, logEntry + Environment.NewLine);
+        if (logFile.RoleId != (int)Role.Supervior)
+        {
+            return await DownloadLogFile(logFilePath);
+        }
+
+        var isInDp = await unitOfWork.SessionLogRepository.IsUserInDepartmentGroupAsync(logFile.UserId, logFile.ManagerId);
+
+        if (isInDp)
+        {
+            return await DownloadLogFile(logFilePath);
+        }
+
+        return "Unauthorized";
     }
 
-    private async Task<string> GetUserInDepartmentGroupAsync(string userId, string managerId)
+    [HttpPost]
+    public async Task<bool> WriteLogToFileAsync([FromBody] LogFile logFile)
     {
-        return await unitOfWork.SessionLogRepository.GetUserInDepartmentGroupAsync(PadUserId(userId), PadUserId(managerId));
+        var logFilePath = Path.Combine(fileLogRootPath, $"{logFile.UserId}.log");
+        string logEntry;
+        string separator;
+
+        if (!System.IO.File.Exists(logFilePath))
+        {
+            string headers = $"{"Date",-22}{"|",-3}{"Page",-15}{"|",-3}{"Method",-20}{"|",-3}{"Message"}";
+            separator = new('-', 100);
+            logEntry = headers + Environment.NewLine + separator + Environment.NewLine;
+
+            await System.IO.File.AppendAllTextAsync(logFilePath, logEntry);
+        }
+
+        logEntry = $"{DateTime.Now,-22:M/d/yyyy h:mm:ss tt}{"|",-3}{logFile.Component,-15}{"|",-3}{logFile.Method,-20}{"|",-3}{logFile.Message}";
+        separator = new string('-', logEntry.Length);
+        System.IO.File.AppendAllText(logFilePath, logEntry + Environment.NewLine + separator + Environment.NewLine);
+
+        return await Task.FromResult(true);
+    }
+
+    private static async Task<string> DownloadLogFile(string logFilePath)
+    {
+        byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(logFilePath);
+        return Encoding.UTF8.GetString(fileBytes);
     }
 }

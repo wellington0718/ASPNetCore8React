@@ -1,11 +1,10 @@
 ﻿import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import './App.css';
-
-import ProtectedRoutes from './components/protectedRoutes';
 import { DialogsProvider } from '@toolpad/core/useDialogs';
 import Home from './pages/home';
 import MainLayout from './components/mainLayout';
 import Login from './pages/login';
+import ProtectedRoutes from './components/protectedRoutes';
 
 const router = createBrowserRouter(
     [
@@ -17,26 +16,20 @@ const router = createBrowserRouter(
                     element: <ProtectedRoutes />,
                     children: [
                         {
-                            path: "/",
+                            path: "/logtimeweb/",
                             element: <Home />,
                             // errorElement: <Error />,
-                        },
-                        {
-                            path: "UserSession",
-                            element: <Home />,
-                            // errorElement: <Error />,
-                        },
+                        }
+
                     ],
                 },
                 {
-                    path: "login",
+                    path: "/logtimeweb/login",
                     element: <Login />,
-                    // errorElement: <Error />,
-                },
+                }
             ],
         },
     ],
-    { basename: "/LogTimeWeb" }
 );
 
 

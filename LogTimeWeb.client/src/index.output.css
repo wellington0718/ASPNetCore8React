@@ -701,14 +701,19 @@ body {
   border-width: 0px;
 }
 
+.bg-\[\#0D3B70\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(13 59 112 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#0d3b70\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(13 59 112 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#1F2226\] {
   --tw-bg-opacity: 1;
   background-color: rgb(31 34 38 / var(--tw-bg-opacity));
-}
-
-.bg-\[\#30445f\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(48 68 95 / var(--tw-bg-opacity));
 }
 
 .bg-transparent {

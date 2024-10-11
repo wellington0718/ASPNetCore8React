@@ -131,12 +131,14 @@ export type LogFile = {
 
 export const MESSAGE = {
     VERIFY_CREDENTIALS: "Verificando credenciales, por favor espere",
-    FETCH_SESSIONS: "Buscando sesiones abiertas, por favor espere",
-    CREATE_SESSION: "Creando sesión, por favor espere",
-    UNKNOWN_ERROR: "Error desconocido. Por favor comunicarse con el departamento de IT.",
-    ACTIVE_SESSION: "Ya existe una sesión activa. Deseas cerrarla para continuar?",
+    FETCH_SESSIONS: "Buscando sesiones activas, por favor espere",
+    CREATE_SESSION: "Iniciando sesión, por favor espere",
+    UNKNOWN_ERROR: "Error desconocido. Por favor contactar con el departamento de IT.",
+    ACTIVE_SESSION: "Actualmente hay una sesión activa. ¿Deseas cerrarla para continuar?",
     INVALID_CREDENTIAL: "Las credenciales no son validas.",
     CLOSE_SESSION: "Cerrando sesión, por favor espere",
     CONNECTION_ERROR: "No se pudo establecer comunicación con el servidor. Por favor verifique su conexión a la red/internet.",
+    SESSION_CLOSED: "Al intentar actualizar los datos de la sesión, esta ya había sido finalizada de forma externa.",
+    NO_ACCESS: "Actualmente, tu acceso está restringido debido a que te encuentras en un período de ausencia. Para cualquier consulta adicional, te recomendamos ponerte en contacto con tu supervisor o líder de equipo.",
     NONE: ""
 };

@@ -7,4 +7,6 @@ public class BaseResponse
     public string Title { get; set; }
     public string Message { get; set; }
     public bool IsSessionAlreadyClose { get; set; } = false;
+    public string ReturnDate { get; set; }
+    public string Reason { get; set; }
 }

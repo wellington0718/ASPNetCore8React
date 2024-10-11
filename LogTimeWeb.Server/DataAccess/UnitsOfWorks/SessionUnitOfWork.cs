@@ -12,7 +12,7 @@ public interface ISessionUnitOfWork
     void Commit();
 }
 public class SessionUnitOfWork(IConfiguration configuration) : 
-    GenericUnitOfWork(new SqlConnection(configuration.GetConnectionString(nameof(ConnectionStringName.LogTime)))), ISessionUnitOfWork
+    GenericUnitOfWork(new SqlConnection(configuration.GetConnectionString(nameof(ConnectionStringName.LogTimeWeb)))), ISessionUnitOfWork
 {
     private SessionLogRepository sessionLogRepository;
     public SessionLogRepository SessionLogRepository =>
@@ -140,7 +140,7 @@ public class SessionUnitOfWork(IConfiguration configuration) :
 
     private async Task<SessionLog> CreateSessionLog(string paddedUserId)
     {
-        var startDate = DateTime.UtcNow;
+        var startDate = DateTime.Now;
         var sessionLog = new SessionLog
         {
             LoginDate = startDate,
